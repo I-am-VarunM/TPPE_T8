@@ -31,13 +31,16 @@ module tppe #(
     output wire [CORRECTION_ACC_WIDTH-1:0] result_1, 
     output wire [CORRECTION_ACC_WIDTH-1:0] result_2,
     output wire [CORRECTION_ACC_WIDTH-1:0] result_3,
+    output wire [CORRECTION_ACC_WIDTH-1:0] result_4,
+    output wire [CORRECTION_ACC_WIDTH-1:0] result_5, 
+    output wire [CORRECTION_ACC_WIDTH-1:0] result_6,
+    output wire [CORRECTION_ACC_WIDTH-1:0] result_7,
     
     output wire ready_for_input,
     output wire [TIMESTEPS-1:0]lif_output
 );
     wire result_valid;
     // Internal wires connecting modules
-    
     // Fast prefix to laggy prefix
     wire [$clog2(BITMASK_WIDTH)-1:0] matched_position;
     wire [WEIGHT_WIDTH-1:0] matched_weight;
@@ -147,9 +150,9 @@ module tppe #(
     );
     
     LIF_Model #(
-        .T(8),  
-    .Q(8)  
-)(.result_val(result_valid),.clk(clk), .rst_n(rst_lif), .input_data({result_0, result_1, result_2, result_3}), .threshold(8'b00001111), .spike_out(lif_output),.lif_done(lif_done));
+    .T(TIMESTEPS),  
+    .Q(CORRECTION_ACC_WIDTH)  
+)(.result_val(result_valid),.clk(clk),.start(1'b1), .rst_n(rst_lif), .input_data({result_7, result_6, result_5, result_4, result_3, result_2, result_1, result_0}), .threshold(8'b0000011111), .spike_out(lif_output),.lif_done(lif_done));
     
     // Connect FIFO read enables from accumulator to laggy prefix
     // In the current implementation of accumulator_correction, we don't have separate
