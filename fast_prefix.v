@@ -17,7 +17,7 @@ module fast_prefix #(
 
     // Create local array to work with the flattened input
     wire [WEIGHT_WIDTH-1:0] fibre_b_data [0:BITMASK_WIDTH-1];
-    
+    reg [$clog2(BITMASK_WIDTH)-1:0] prefix_position;
     // Convert flat input to array (for internal use)
     genvar i;
     generate
@@ -70,7 +70,7 @@ module fast_prefix #(
         .WIDTH(BITMASK_WIDTH)
     ) prefix_sum_inst (
         .bit_array(registered_bitmask_b),
-        .position(lowest_one_position_reg > 0 ? lowest_one_position_reg - 1 : 0),  // Subtract 1 if not at position 0
+        .position(prefix_position),  // Subtract 1 if not at position 0
         .prefix_sum(prefix_sum_result)
     );
     
@@ -139,6 +139,13 @@ module fast_prefix #(
             
             default: next_state = IDLE;
         endcase
+    end
+    
+    always @(*)begin
+    if (lowest_one_position_reg > 0)
+        prefix_position = lowest_one_position_reg - 1;
+    else
+        prefix_position = 0;
     end
     
     // Output and datapath logic
