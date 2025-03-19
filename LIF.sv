@@ -1,31 +1,30 @@
 module LIF_Model #(
     parameter T = 8,  // Number of time steps
-    parameter Q = 8   // Bits for quantization
+    parameter Q = 10   // Bits for quantization
 ) (
-    input logic result_val,
-    input  logic        clk,
-    input  logic        rst_n,
-    input  logic        start,             // Added start signal to begin processing
-    input  logic [Q-1:0] input_data [T-1:0], // Input data for T time steps
-    input  logic [Q-1:0] threshold,          // Firing threshold
-    output logic [T-1:0] spike_out,          // Output spikes for T time steps
-    output logic        lif_done            // Done signal
+    input wire result_val,
+    input wire        clk,
+    input wire        rst_n,
+    input wire        start,             // Added start signal to begin processing
+    input wire [T*Q-1:0] input_data,     // Changed to bit vector
+    input wire [Q-1:0] threshold,        // Firing threshold
+    output reg [T-1:0] spike_out,        // Output spikes for T time steps
+    output wire        lif_done           // Done signal
 );
     // State definitions
-    typedef enum logic [1:0] {
-        IDLE = 2'b00,
-        CALC = 2'b01,
-        DONE = 2'b10
-    } state_t;
+    parameter IDLE = 2'b00;
+    parameter CALC = 2'b01;
+    parameter DONE = 2'b10;
     
-    state_t current_state, next_state;
+    reg [1:0] current_state, next_state;
     
-    logic [Q-1:0] membrane_potential;
-    logic [$clog2(T):0] timestep; // Counter to track current timestep
-    logic [Q-1:0] next_potential;
+    reg [Q-1:0] membrane_potential;
+    reg [$clog2(T):0] timestep; // Counter to track current timestep
+    reg [Q-1:0] next_potential;
+    reg [Q-1:0] current_input;
     
     // Next state logic
-    always_comb begin
+    always @(*) begin
         next_state = current_state;
         
         case (current_state)
@@ -47,31 +46,36 @@ module LIF_Model #(
         endcase
     end
     
+    // Extract the current input from the bit vector
+    always @(*) begin
+        current_input = input_data[((timestep+1)*Q-1) -: Q];
+    end
+    
     // State register and timestep counter
-    always_ff @(posedge clk or negedge rst_n) begin
+    always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             current_state <= IDLE;
-            timestep <= '0;
-            membrane_potential <= '0;
-            spike_out <= '0;
+            timestep <= 0;
+            membrane_potential <= 0;
+            spike_out <= 0;
         end else begin
             current_state <= next_state;
             
             case (current_state)
                 IDLE: begin
-                    timestep <= '0;
+                    timestep <= 0;
                     if (start)
-                        membrane_potential <= '0;
+                        membrane_potential <= 0;
                 end
                 
                 CALC: begin
                     if (timestep < T) begin
                         // Calculate next potential
                         if (timestep == 0) 
-                            next_potential = membrane_potential + input_data[timestep];
+                            next_potential = membrane_potential + current_input;
                         else 
-                            next_potential = spike_out[timestep-1] ? input_data[timestep] : 
-                                                                   (membrane_potential + input_data[timestep]);
+                            next_potential = spike_out[timestep-1] ? current_input : 
+                                                                   (membrane_potential + current_input);
                         
                         // Check threshold and generate spike
                         spike_out[timestep] <= (next_potential > threshold);
@@ -92,8 +96,6 @@ module LIF_Model #(
     end
     
     // Output logic for done signal
-    always_comb begin
-        lif_done = (current_state == DONE);
-    end
+    assign lif_done = (current_state == DONE);
     
 endmodule
