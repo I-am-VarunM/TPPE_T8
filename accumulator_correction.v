@@ -193,7 +193,6 @@ module accumulator_correction #(
                                 pseudo_accumulator[CORRECTION_ACC_WIDTH-1:0] - stored_weight);
                     end
                     
-                    corr_state <= COMPLETE;
                     $display("ACC: Correction complete");
                     
                     if (stored_fibre_a[4]) begin
