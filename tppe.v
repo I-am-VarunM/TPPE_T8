@@ -152,7 +152,7 @@ module tppe #(
     LIF_Model #(
     .T(TIMESTEPS),  
     .Q(CORRECTION_ACC_WIDTH)  
-)(.result_val(result_valid),.clk(clk),.start(1'b1), .rst_n(rst_lif), .input_data({result_7, result_6, result_5, result_4, result_3, result_2, result_1, result_0}), .threshold(8'b0000011111), .spike_out(lif_output),.lif_done(lif_done));
+    )LIF_Model_inst(.result_val(result_valid),.clk(clk),.start(1'b1), .rst_n(rst_lif), .input_data({result_7, result_6, result_5, result_4, result_3, result_2, result_1, result_0}), .threshold(8'b0000011111), .spike_out(lif_output),.lif_done(lif_done));
     
     // Connect FIFO read enables from accumulator to laggy prefix
     // In the current implementation of accumulator_correction, we don't have separate
